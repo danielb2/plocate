@@ -95,7 +95,11 @@ Corpus::Corpus(int fd, const char *filename_for_errors, IOUringEngine *engine)
 			perror("lseek");
 			exit(1);
 		}
+#ifdef POSIX_FADV_DONTNEED
 		posix_fadvise(fd, 0, len, POSIX_FADV_DONTNEED);
+#elif defined(F_NOCACHE)
+		fcntl(fd, F_NOCACHE, 1);
+#endif
 	}
 
 	complete_pread(fd, &hdr, sizeof(hdr), /*offset=*/0, filename_for_errors);
@@ -482,8 +486,8 @@ uint64_t do_search_file(const vector<Needle> &needles, const std::string &filena
 	}
 
 	// Drop privileges.
-	if (setresgid(getgid(), getgid(), getgid()) != 0) {
-		perror("setresgid");
+	if (setgid(getgid()) != 0) {
+		perror("setgid");
 		exit(EXIT_FAILURE);
 	}
 
@@ -951,8 +955,8 @@ int main(int argc, char **argv)
 		// from making plocate slow for everyone else.
 		// --ignore-visibility is obvious; if we allowed to keep sgid with
 		// that flag on, it would subvert the entire security model.
-		if (setresgid(getgid(), getgid(), getgid()) != 0) {
-			perror("setresgid");
+		if (setgid(getgid()) != 0) {
+			perror("setgid");
 			exit(EXIT_FAILURE);
 		}
 	}

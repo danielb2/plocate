@@ -43,7 +43,9 @@ any later version.
 #include <iosfwd>
 #include <math.h>
 #include <memory>
+#ifndef __APPLE__
 #include <mntent.h>
+#endif
 #include <random>
 #include <stdint.h>
 #include <stdio.h>
@@ -52,6 +54,9 @@ any later version.
 #include <string>
 #include <sys/resource.h>
 #include <sys/stat.h>
+#ifdef __APPLE__
+#include <sys/mount.h>
+#endif
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -164,6 +169,21 @@ bool filesystem_is_excluded(const string &path)
 	if (conf_debug_pruning) {
 		fprintf(stderr, "Checking whether filesystem `%s' is excluded:\n", path.c_str());
 	}
+#ifdef __APPLE__
+	struct statfs fs;
+	if (statfs(path.c_str(), &fs) != 0) {
+		return false;
+	}
+	string type(fs.f_fstypename);
+	for (char &p : type) {
+		p = toupper(p);
+	}
+	bool exclude = (find(conf_prunefs.begin(), conf_prunefs.end(), type) != conf_prunefs.end());
+	if (exclude && conf_debug_pruning) {
+		fprintf(stderr, " => excluded due to filesystem type\n");
+	}
+	return exclude;
+#else
 	FILE *f = setmntent("/proc/mounts", "r");
 	if (f == nullptr) {
 		return false;
@@ -193,12 +213,18 @@ bool filesystem_is_excluded(const string &path)
 	}
 	endmntent(f);
 	return false;
+#endif
 }
 
 dir_time get_dirtime_from_stat(const struct stat &buf)
 {
+#ifdef __APPLE__
+	dir_time ctime{ buf.st_ctimespec.tv_sec, int32_t(buf.st_ctimespec.tv_nsec) };
+	dir_time mtime{ buf.st_mtimespec.tv_sec, int32_t(buf.st_mtimespec.tv_nsec) };
+#else
 	dir_time ctime{ buf.st_ctim.tv_sec, int32_t(buf.st_ctim.tv_nsec) };
 	dir_time mtime{ buf.st_mtim.tv_sec, int32_t(buf.st_mtim.tv_nsec) };
+#endif
 	dir_time dt = max(ctime, mtime);
 
 	if (time_is_current(dt)) {

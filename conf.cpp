@@ -37,9 +37,20 @@ any later version.
 
 using namespace std;
 
+#ifdef __APPLE__
+static char *program_name;
+#define program_invocation_name program_name
+#endif
+
 /* true if locate(1) should check whether files are visible before reporting
    them */
+#ifdef __APPLE__
+// macOS installations commonly build a per-user database without a dedicated
+// setgid group. Visibility checks remain available through updatedb.conf.
+bool conf_check_visibility = false;
+#else
 bool conf_check_visibility = true;
+#endif
 
 /* Filesystems to skip, converted to uppercase and sorted by name */
 vector<string> conf_prunefs;
@@ -673,6 +684,9 @@ gen_conf_block(void)
    Exit on error or --help, --version. */
 void conf_prepare(int argc, char *argv[])
 {
+#ifdef __APPLE__
+	program_name = argv[0];
+#endif
 	parse_initial_arguments(argc, argv);
 	parse_updatedb_conf();
 	parse_arguments(argc, argv);
