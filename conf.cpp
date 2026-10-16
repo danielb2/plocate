@@ -21,6 +21,7 @@ any later version.
  */
 
 #include "conf.h"
+#include "default_db.h"
 
 #include "lib.h"
 
@@ -340,6 +341,12 @@ eof:
 static void
 help(void)
 {
+	string default_db = default_database_path();
+#ifdef __APPLE__
+	const char *visibility_default = "no";
+#else
+	const char *visibility_default = "yes";
+#endif
 	printf("Usage: updatedb [OPTION]...\n"
 	         "Update a plocate database.\n"
 	         "\n"
@@ -364,14 +371,14 @@ help(void)
 	         "      --prunepaths PATHS         paths to omit from database\n"
 	         "  -l, --require-visibility FLAG  check visibility before "
 	         "reporting files\n"
-	         "                                 (default \"yes\")\n"
+	         "                                 (default \"%s\")\n"
 	         "  -v, --verbose                  print paths of files as they "
 	         "are found\n"
 	         "  -V, --version                  print version information\n"
 	         "\n"
 	         "The configuration defaults to values read from `%s',\n"
 	         "or from a file specified with --config-file.\n",
-	       DBFILE, UPDATEDB_CONF, UPDATEDB_CONF);
+	       default_db.c_str(), UPDATEDB_CONF, visibility_default, UPDATEDB_CONF);
 	printf("\n"
 	       "Report bugs to %s.\n",
 	       PACKAGE_BUGREPORT);
@@ -639,7 +646,7 @@ options_done:
 		conf_scan_root = root;
 	}
 	if (conf_output.empty())
-		conf_output = DBFILE;
+		conf_output = default_database_path();
 	if (conf_output[0] != '/')
 		conf_output = prepend_cwd(conf_output);
 }

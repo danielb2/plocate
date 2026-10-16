@@ -36,6 +36,7 @@ any later version.
 #include <assert.h>
 #include <chrono>
 #include <dirent.h>
+#include <filesystem>
 #include <fcntl.h>
 #include <getopt.h>
 #include <grp.h>
@@ -808,6 +809,15 @@ int main(int argc, char **argv)
 	}
 
 	conf_prepare(argc, argv);
+	std::filesystem::path output_parent = std::filesystem::path(conf_output).parent_path();
+	if (!output_parent.empty()) {
+		std::error_code error;
+		std::filesystem::create_directories(output_parent, error);
+		if (error) {
+			fprintf(stderr, "%s: %s\n", output_parent.c_str(), error.message().c_str());
+			exit(EXIT_FAILURE);
+		}
+	}
 	if (conf_prune_bind_mounts) {
 		bind_mount_init();
 	}
