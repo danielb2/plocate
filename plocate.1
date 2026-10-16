@@ -88,9 +88,9 @@ number at the end.
 .TP
 \fB\-d\fR, \fB\-\-database\fR \fIDBPATH\fR
 Find matches in the given database, instead of the platform's default database.
-On macOS, the default is in the current user's
-\fB~/Library/Application Support/plocate/plocate.db\fR. On other systems,
-it is selected at build time.
+On macOS, the default is under the installation prefix's
+\fBvar/plocate/plocate.db\fR directory. On other systems, it is selected at
+build time.
 This argument can be given multiple times, to search multiple databases.
 It is also possible to give multiple databases in one argument, separated by 
 .BR : .

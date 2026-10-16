@@ -3,7 +3,13 @@ project('plocate', 'cpp', default_options: ['buildtype=debugoptimized','cpp_std=
 add_project_arguments('-DGROUPNAME="' + get_option('locategroup') + '"', language: 'cpp')
 updatedb_conf = join_paths(get_option('prefix'), get_option('sysconfdir'), 'updatedb.conf')
 add_project_arguments('-DUPDATEDB_CONF="' + updatedb_conf + '"', language: 'cpp')
-dbfile = join_paths(get_option('sharedstatedir'), get_option('dbpath'))
+if host_machine.system() == 'darwin'
+	# Keep Homebrew's mutable database under its prefix. In particular, avoid
+	# the commonly root-owned var/lib directory on macOS installations.
+	dbfile = join_paths(get_option('prefix'), 'var', 'plocate', 'plocate.db')
+else
+	dbfile = join_paths(get_option('sharedstatedir'), get_option('dbpath'))
+endif
 add_project_arguments('-DDBFILE="' + dbfile + '"', language: 'cpp')
 add_project_arguments('-DPACKAGE_NAME="plocate"', language: 'cpp')
 add_project_arguments('-DPACKAGE_VERSION="' + meson.project_version() + '"', language: 'cpp')
@@ -59,9 +65,7 @@ update_script = configure_file(input: 'update-plocate.sh',
                configuration: conf_data)
 
 fs = import('fs')
-if host_machine.system() != 'darwin'
-	meson.add_install_script('mkdir.sh', fs.parent(dbfile))
-endif
+meson.add_install_script('mkdir.sh', fs.parent(dbfile))
 
 if get_option('install_cron')
 	install_data(update_script,

@@ -25,10 +25,9 @@ Homebrew prefix and skip the Linux-only group and service setup:
   updatedb -U "$HOME"
   plocate Downloads
 
-On macOS, the database defaults to `~/Library/Application Support/plocate/plocate.db`.
-`updatedb` creates the directory, and both programs use this default, so no
-`-o` or `-d` option is needed. On other systems the database path is selected
-at build time from the installation prefix.
+On macOS, the database defaults to `var/plocate/plocate.db` under the install
+prefix (for example, `/opt/homebrew/var/plocate/plocate.db`). Both programs use
+this default, so no `-o` or `-d` option is needed.
 
 To build the database for the first time after install, you can do
 
